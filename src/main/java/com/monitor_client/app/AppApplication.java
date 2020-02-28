@@ -7,6 +7,7 @@ import com.monitor_client.app.capture.Capture;
 import com.monitor_client.app.config.Config;
 import com.monitor_client.app.netstat.Netstat;
 import com.monitor_client.app.netty_client.NettyClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -23,6 +24,15 @@ public class AppApplication implements CommandLineRunner {
 
     @Autowired
     private Netstat netstat;
+
+    @Value("${dst.host}")
+    String host;
+
+    @Value("${dst.port}")
+    int port;
+
+    @Value("${iface.id}")
+    int ifaceId;
 
     static {
         try {
@@ -51,13 +61,6 @@ public class AppApplication implements CommandLineRunner {
             return;
         }
 
-        /* Run netstat task to provide port status */
-        // TODO : USE application.properties !!!
-        String testHost = "192.168.0.101";
-        int testPort = 8090;
-
-        String host = testHost;
-        int port = testPort;
         NettyClient netstatClient = new NettyClient(host, port);
         netstatClient.start();
         // netstat.getPortStatus(portList);
@@ -83,8 +86,7 @@ public class AppApplication implements CommandLineRunner {
         }
         System.out.println(cmd.toString());
 
-        // TODO : device id
-        capture.prepareIface(3, cmd.toString());
+        capture.prepareIface(ifaceId, cmd.toString());
         capture.runCaptureTask(netstatClient);
     }
 }

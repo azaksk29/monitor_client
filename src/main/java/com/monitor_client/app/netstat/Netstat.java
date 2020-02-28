@@ -1,26 +1,22 @@
 package com.monitor_client.app.netstat;
 
+import com.monitor_client.app.define.PortStat;
+import com.monitor_client.app.define.TcpConnectionState;
+import com.monitor_client.app.netty_client.NettyClient;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.springframework.stereotype.Component;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.ProcessBuilder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import com.monitor_client.app.netty_client.NettyClient;
-import com.monitor_client.app.define.PortStat;
-import com.monitor_client.app.define.TcpConnectionState;
-import com.monitor_client.app.utils.Convert;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.springframework.stereotype.Component;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 @Component
 public class Netstat {
@@ -50,6 +46,7 @@ public class Netstat {
                     jsonObject.put("ports", portArray);
                 });
                 String jsonInfo = jsonObject.toJSONString();
+
 
                 ByteBuf bbuf = Unpooled.buffer(jsonInfo.length() + 5);
                 bbuf.writeByte(0x99); // start byte
