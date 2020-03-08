@@ -1,33 +1,24 @@
 package com.monitor_client.app.capture;
 
-import java.util.Date;
-
 import com.monitor_client.app.netty_client.NettyClient;
-
-import org.jnetpcap.packet.Payload;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
+import lombok.extern.slf4j.Slf4j;
 import org.jnetpcap.packet.PcapPacket;
 import org.jnetpcap.packet.PcapPacketHandler;
 import org.jnetpcap.packet.format.FormatUtils;
 import org.jnetpcap.protocol.lan.Ethernet;
-import org.jnetpcap.protocol.network.Ip4;
 import org.jnetpcap.protocol.tcpip.Tcp;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-
+@Slf4j
 public class CaptureHandler implements PcapPacketHandler<String> {
-
-    private NettyClient client;
-
-    public CaptureHandler(NettyClient client) {
-        this.client = client;
-    }
 
     @Override
     public void nextPacket(PcapPacket packet, String user) {
 
         final Tcp tcp = new Tcp();
-        if (packet.hasHeader(tcp) == false)
+        if (false == packet.hasHeader(tcp))
             return; // Not IP packet
 
         if (0 == tcp.getPayloadLength())
@@ -35,14 +26,16 @@ public class CaptureHandler implements PcapPacketHandler<String> {
 
         packet.getHeader(tcp);
 
-        final Ethernet eth = new Ethernet();
+        Ethernet eth = new Ethernet();
         if (packet.hasHeader(eth)) {
-            System.out.println(
-                    "SRC MAC : " + FormatUtils.mac(eth.source()) + "\nDST MAC : " + FormatUtils.mac(eth.destination()));
+//            System.out.println(
+//                    "SRC MAC : " + FormatUtils.mac(eth.source()) + "," +
+//                            " DST MAC : " + FormatUtils.mac(eth.destination()) +
+//                            " ( " + tcp.getPayloadLength() + " ) ");
         }
 
-        // final Ip4 ip = new Ip4();
-        // packet.getHeader(ip);
+        //final Ip4 ip = new Ip4();
+        //packet.getHeader(ip);
         // final String sourceIP = FormatUtils.ip(ip.source());
         // final String destinationIP = FormatUtils.ip(ip.destination());
         // System.out.print(" source ip = " + sourceIP);
@@ -56,16 +49,16 @@ public class CaptureHandler implements PcapPacketHandler<String> {
         // Date(packet.getCaptureHeader().timestampInMillis()), captureLength);
 
         final byte[] payload = tcp.getPayload();
-        ByteBuf bbuf = Unpooled.buffer(payload.length + 1);
+        // TODO : Unpooled ??
+        //ByteBuf bbuf = Unpooled.buffer(payload.length + 1);
+        ByteBuf bbuf = PooledByteBufAllocator.DEFAULT.buffer(payload.length + 1);
         bbuf.writeByte(0x77); // start byte
-        bbuf.writeInt(payload.length); 
+        bbuf.writeInt(payload.length);
         bbuf.writeBytes(payload);
-        client.sendByteBuf(bbuf);
+        NettyClient.send(NettyClient.channelMap.get(tcp.destination()), bbuf);
+        //bbuf.release();
 
-        // System.out.println(payload.toString() + "(" + payload.length + ")");
-
-        final String s = new String(payload);
-        System.out.println(s);
+        //final String s = new String(payload);
 
         // final Payload hexPayload = new Payload();
         // packet.hasHeader(hexPayload);

@@ -1,30 +1,40 @@
 package com.monitor_client.app.capture;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.monitor_client.app.define.ClientDataType;
 import com.monitor_client.app.netty_client.NettyClient;
-
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.jnetpcap.Pcap;
 import org.jnetpcap.PcapBpfProgram;
 import org.jnetpcap.PcapIf;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
+
+@Slf4j
 @Component
 public class Capture {
 
     private static List<PcapIf> alldevs;
 
+    private List<NettyClient> clientList = new ArrayList<NettyClient>();
+
     private Pcap pcap;
 
-    public void runCaptureTask(NettyClient client) {
+    public void addClient( NettyClient client ) {
+        this.clientList.add(client);
+    }
+
+    public void run() {
         Runnable runnable = new Runnable() {
             public void run() {
                 if (pcap == null) {
                     System.err.printf("Error while run device for capture");
                     return;
                 }
-                pcap.loop(-1/* unlimit loop */, new CaptureHandler(client), "jNetPcap rocks!");
+                pcap.loop(-1/* unlimit loop */, new CaptureHandler(), "jNetPcap rocks!");
                 pcap.close();
             }
         };
@@ -33,13 +43,30 @@ public class Capture {
         thread.start();
     }
 
-    public void findAllDevs() {
+    public int doConnect(int srcPort) {
+        if(clientList.isEmpty()) {
+            log.error("Client NOT allocated ... ");
+            return -1;
+        }
+
+        for(NettyClient client:clientList) {
+            if(client.getSrcPort() == srcPort) {
+                client.doConnect();
+                return 0;
+            }
+        };
+
+        log.error("Can't found port {} client ... ",srcPort);
+        return -1;
+    }
+
+    public int findAllDevs() {
         StringBuilder errbuf = new StringBuilder();
         alldevs = new ArrayList<PcapIf>();
         int ret = Pcap.findAllDevs(alldevs, errbuf);
-        if (ret == Pcap.NOT_OK || alldevs.isEmpty()) {
+        if (ret < 0 || alldevs.isEmpty()) {
             System.err.printf("Can't read list of devices, error is %s", errbuf.toString());
-            return;
+            return -1;
         }
         System.out.println("Network devices found:");
 
@@ -49,6 +76,7 @@ public class Capture {
                     : "No description available";
             System.out.printf("#%d: %s [%s]\n", i++, device.getName(), description);
         }
+        return 0;
     }
 
     public Pcap prepareIface(int id, String expression) {
@@ -96,5 +124,19 @@ public class Capture {
         this.pcap = pcap;
 
         return pcap;
+    }
+
+    public String createCommand(List<Integer> portList) {
+        StringBuilder cmd = new StringBuilder();
+        for (int i = 0; i < portList.size(); i++) {
+            if (i > 0)
+                cmd.append("or ");
+            cmd.append("tcp dst port ");
+            cmd.append(portList.get(i));
+            cmd.append(" ");
+        }
+        log.info("{}",cmd.toString());
+
+        return cmd.toString();
     }
 }

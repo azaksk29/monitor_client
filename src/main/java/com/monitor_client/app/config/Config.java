@@ -1,21 +1,22 @@
 package com.monitor_client.app.config;
 
+import org.springframework.stereotype.Component;
+
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-
-import org.springframework.stereotype.Component;
+import java.util.List;
 
 @Component
 public class Config {
-    private ArrayList<Integer> portList;
+    private List<Integer> portList;
 
     public Config() {
         this.portList = new ArrayList<Integer>();
     }
 
-    public ArrayList<Integer> getPortList() {
+    public List<Integer> getPortList() {
         return this.portList;
     }
 
@@ -27,12 +28,14 @@ public class Config {
             try (BufferedReader output = new BufferedReader(new InputStreamReader(inputStream))) {
                 output.lines().forEach((line) -> {
                     if (line.contains("-")) {
+                        /* case : port number sequence range */
                         String[] strPort = line.split("-");
                         int first = Integer.parseInt(strPort[0]);
                         int last = Integer.parseInt(strPort[1]);
                         for (int i = 0; i < last - first; i++)
                             portList.add(first + i);
                     } else if (line.isEmpty()) {
+                        /* No need progress */
                     } else
                         portList.add(Integer.parseInt(line));
                 });
@@ -41,7 +44,9 @@ public class Config {
             System.out.println("Error File I/O !!" + e);
         } finally {
             try {
-                inputStream.close();
+                if (inputStream != null) {
+                    inputStream.close();
+                }
             } catch (Exception e) {
                 System.out.println("Can't close file !!" + e);
             }

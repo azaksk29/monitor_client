@@ -1,29 +1,32 @@
 package com.monitor_client.app;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.util.List;
 
 import com.monitor_client.app.capture.Capture;
 import com.monitor_client.app.config.Config;
 import com.monitor_client.app.netstat.Netstat;
+import com.monitor_client.app.define.ClientDataType;
 import com.monitor_client.app.netty_client.NettyClient;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+@Slf4j
 @SpringBootApplication
 public class AppApplication implements CommandLineRunner {
 
     @Autowired
     private Config config;
 
-    @Autowired
-    private Capture capture;
+//    @Autowired
+//    private Capture capture;
 
-    @Autowired
-    private Netstat netstat;
+//    @Autowired
+//    private Netstat netstat;
 
     @Value("${dst.host}")
     String host;
@@ -33,6 +36,9 @@ public class AppApplication implements CommandLineRunner {
 
     @Value("${iface.id}")
     int ifaceId;
+
+    @Value("${config.file.path}")
+    String configFilePath;
 
     static {
         try {
@@ -54,39 +60,29 @@ public class AppApplication implements CommandLineRunner {
         System.out.println("Hello Java");
 
         /* Loading port info from File */
-        config.loadConfigFromFile("src/main/java/com/monitor_client/app/config/config.txt");
-        ArrayList<Integer> portList = config.getPortList();
+        config.loadConfigFromFile(configFilePath);
+        List<Integer> portList = config.getPortList();
         if (portList.isEmpty()) {
             System.err.print("Error : Can't find port list !!!\n");
             return;
         }
 
-        NettyClient netstatClient = new NettyClient(host, port);
-        netstatClient.start();
-        // netstat.getPortStatus(portList);
-        netstat.runNetstatTask(portList, netstatClient, 2);
+        int server_port = port;
+        /* Run netstat task to provide port stat data */
+        Netstat netstat = new Netstat();
+        netstat.setClient( new NettyClient(ClientDataType.DATA_TYPE_PORT_STAT, host, server_port) );
+        netstat.doConnect();
+        netstat.run(portList, 2);
 
-        /* Run pcap task to provide data */
-        NettyClient captureClient = new NettyClient(host, port);
-        captureClient.start();
-        capture = new Capture();
-        capture.findAllDevs();
-
-        /*
-         * Make filter command : expression
-         * "tcp dst port[num] and tcp dst port [num] tcp dst port [num] ....."
-         */
-        StringBuilder cmd = new StringBuilder();
-        for (int i = 0; i < portList.size(); i++) {
-            if (i > 0)
-                cmd.append("or ");
-            cmd.append("tcp dst port ");
-            cmd.append(portList.get(i));
-            cmd.append(" ");
+        /* Run pcap task to provide packet data */
+        Capture capture = new Capture();
+        /* To emulate device, need to split client by using port value */
+        for(Integer srcPort:portList) {
+            capture.addClient(new NettyClient(ClientDataType.DATA_TYPE_CAPTURED_PACKET, host, server_port, srcPort));
+            capture.doConnect(srcPort);
         }
-        System.out.println(cmd.toString());
-
-        capture.prepareIface(ifaceId, cmd.toString());
-        capture.runCaptureTask(netstatClient);
+        capture.findAllDevs();
+        capture.prepareIface(ifaceId, capture.createCommand(portList));
+        capture.run();
     }
 }
