@@ -42,6 +42,7 @@ public class Netstat {
                 /* send to server */
                 if(client != null)
                     client.send(bbuf);
+                // TODO : release bbuf....
             }
         };
 

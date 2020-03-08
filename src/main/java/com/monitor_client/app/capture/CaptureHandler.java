@@ -56,6 +56,7 @@ public class CaptureHandler implements PcapPacketHandler<String> {
         bbuf.writeInt(payload.length);
         bbuf.writeBytes(payload);
         NettyClient.send(NettyClient.channelMap.get(tcp.destination()), bbuf);
+        //TODO: bbuf release ....
         //bbuf.release();
 
         //final String s = new String(payload);
