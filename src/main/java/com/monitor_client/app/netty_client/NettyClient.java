@@ -9,7 +9,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -95,6 +94,7 @@ public class NettyClient {
 		if(channel != null) {
 			if(channel.isActive()) {
 				channel.writeAndFlush(dataBuf);
+				return;
 			}
 			else {
 				log.error("channel is no active ...");
@@ -103,19 +103,26 @@ public class NettyClient {
 		else {
 			log.error("channel is disconnected ...");
 		}
+		/* To avoid leak, Need to decrease reference count in case of no write */
+		dataBuf.release();
 	}
 
 	public static void send(Channel channel, ByteBuf dataBuf) {
 		if(channel != null) {
 			if(channel.isActive()) {
 				channel.writeAndFlush(dataBuf);
+				return;
 			}
 			else {
 				log.error("channel is no active ...");
+
 			}
 		}
 		else {
 			log.error("channel is disconnected ...");
 		}
+
+		/* To avoid leak, Need to decrease reference count in case of no write */
+		dataBuf.release();
 	}
 }
