@@ -4,6 +4,7 @@ import com.monitor_client.app.netty_client.NettyClient;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jnetpcap.packet.PcapPacket;
 import org.jnetpcap.packet.PcapPacketHandler;
@@ -13,6 +14,13 @@ import org.jnetpcap.protocol.tcpip.Tcp;
 
 @Slf4j
 public class CaptureHandler implements PcapPacketHandler<String> {
+
+
+    NettyClient client;
+
+    CaptureHandler(NettyClient client) {
+        this.client = client;
+    }
 
     @Override
     public void nextPacket(PcapPacket packet, String user) {
@@ -28,10 +36,18 @@ public class CaptureHandler implements PcapPacketHandler<String> {
 
         Ethernet eth = new Ethernet();
         if (packet.hasHeader(eth)) {
-//            System.out.println(
-//                    "SRC MAC : " + FormatUtils.mac(eth.source()) + "," +
-//                            " DST MAC : " + FormatUtils.mac(eth.destination()) +
-//                            " ( " + tcp.getPayloadLength() + " ) ");
+            //if(FormatUtils.mac(eth.source()) == ("78:4F:43:65:52:EE")) {
+            if(FormatUtils.mac(eth.source()).equals("00:D8:61:34:D9:0A")) {
+
+
+                System.out.print("!");
+            System.out.println(
+                    "SRC MAC : " + FormatUtils.mac(eth.source()) + "," +
+                            " DST MAC : " + FormatUtils.mac(eth.destination()) +
+                            " ( " + tcp.getPayloadLength() + " ) ");
+            }
+
+//
         }
 
         //final Ip4 ip = new Ip4();
@@ -55,7 +71,9 @@ public class CaptureHandler implements PcapPacketHandler<String> {
         bbuf.writeByte(0x77); // start byte
         bbuf.writeInt(payload.length);
         bbuf.writeBytes(payload);
-        NettyClient.send(NettyClient.channelMap.get(tcp.destination()), bbuf);
+        //NettyClient.send(NettyClient.channelMap.get(tcp.destination()), bbuf);
+
+        client.send(bbuf);
 
         //final String s = new String(payload);
 

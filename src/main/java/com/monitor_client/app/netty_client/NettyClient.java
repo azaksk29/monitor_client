@@ -73,8 +73,8 @@ public class NettyClient {
 		cf.addListener((ChannelFutureListener) futureListener -> {
 			if (futureListener.isSuccess()) {
 				Channel channel = futureListener.channel();
-				if(clientDataType == ClientDataType.DATA_TYPE_CAPTURED_PACKET)
-					channelMap.put(srcPort,channel);
+				//if(clientDataType == ClientDataType.DATA_TYPE_CAPTURED_PACKET)
+				//	channelMap.put(srcPort,channel);
 				this.channel = channel;
 				log.info("Connect to server successfully!-> host:port:{}", host + ":" + port);
 			} else {

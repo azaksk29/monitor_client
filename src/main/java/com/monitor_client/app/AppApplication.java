@@ -77,10 +77,11 @@ public class AppApplication implements CommandLineRunner {
         /* Run pcap task to provide packet data */
         Capture capture = new Capture();
         /* To emulate device, need to split client by using port value */
-        for(Integer srcPort:portList) {
-            capture.addClient(new NettyClient(ClientDataType.DATA_TYPE_CAPTURED_PACKET, host, server_port, srcPort));
-            capture.doConnect(srcPort);
-        }
+        //for(Integer srcPort:portList) {
+        capture.setClient(new NettyClient(ClientDataType.DATA_TYPE_CAPTURED_PACKET, host, server_port));
+        //capture.doConnect(srcPort);
+        capture.doConnect();
+       // }
         capture.findAllDevs();
         capture.prepareIface(ifaceId, capture.createCommand(portList));
         capture.run();
