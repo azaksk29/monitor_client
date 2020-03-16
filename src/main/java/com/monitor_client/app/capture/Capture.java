@@ -19,12 +19,27 @@ public class Capture {
 
     private static List<PcapIf> alldevs;
 
-    private List<NettyClient> clientList = new ArrayList<NettyClient>();
+    //private List<NettyClient> clientList = new ArrayList<NettyClient>();
 
     private Pcap pcap;
 
-    public void addClient( NettyClient client ) {
-        this.clientList.add(client);
+//    public void addClient( NettyClient client ) {
+//        this.clientList.add(client);
+//    }
+
+    @Setter
+    private NettyClient client;
+
+
+    public int doConnect() {
+        if(client == null) {
+            log.error("Client NOT allocated ... ");
+            return -1;
+        }
+
+        client.doConnect();
+
+        return 0;
     }
 
     public void run() {
@@ -34,7 +49,7 @@ public class Capture {
                     System.err.printf("Error while run device for capture");
                     return;
                 }
-                pcap.loop(-1/* unlimit loop */, new CaptureHandler(), "jNetPcap rocks!");
+                pcap.loop(-1/* unlimit loop */, new CaptureHandler(client), "jNetPcap rocks!");
                 pcap.close();
             }
         };
@@ -43,22 +58,22 @@ public class Capture {
         thread.start();
     }
 
-    public int doConnect(int srcPort) {
-        if(clientList.isEmpty()) {
-            log.error("Client NOT allocated ... ");
-            return -1;
-        }
-
-        for(NettyClient client:clientList) {
-            if(client.getSrcPort() == srcPort) {
-                client.doConnect();
-                return 0;
-            }
-        };
-
-        log.error("Can't found port {} client ... ",srcPort);
-        return -1;
-    }
+//    public int doConnect(int srcPort) {
+//        if(clientList.isEmpty()) {
+//            log.error("Client NOT allocated ... ");
+//            return -1;
+//        }
+//
+//        for(NettyClient client:clientList) {
+//            if(client.getSrcPort() == srcPort) {
+//                client.doConnect();
+//                return 0;
+//            }
+//        };
+//
+//        log.error("Can't found port {} client ... ",srcPort);
+//        return -1;
+//    }
 
     public int findAllDevs() {
         StringBuilder errbuf = new StringBuilder();
@@ -128,6 +143,7 @@ public class Capture {
 
     public String createCommand(List<Integer> portList) {
         StringBuilder cmd = new StringBuilder();
+        //cmd.append("tcp");
         for (int i = 0; i < portList.size(); i++) {
             if (i > 0)
                 cmd.append("or ");

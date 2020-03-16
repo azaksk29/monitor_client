@@ -41,7 +41,8 @@ public class Netstat {
                 ByteBuf bbuf = encode(portStatList);
                 /* send to server */
                 if(client != null)
-                    client.send(bbuf);
+                    //client.send(bbuf);
+                    bbuf.release();
             }
         };
 
@@ -54,9 +55,7 @@ public class Netstat {
             log.error("Client NOT allocated ... ");
             return -1;
         }
-
         client.doConnect();
-
         return 0;
     }
 

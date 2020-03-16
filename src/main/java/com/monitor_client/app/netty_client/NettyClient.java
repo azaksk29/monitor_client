@@ -1,6 +1,5 @@
 package com.monitor_client.app.netty_client;
 
-import com.monitor_client.app.define.ClientDataType;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -73,8 +72,6 @@ public class NettyClient {
 		cf.addListener((ChannelFutureListener) futureListener -> {
 			if (futureListener.isSuccess()) {
 				Channel channel = futureListener.channel();
-				if(clientDataType == ClientDataType.DATA_TYPE_CAPTURED_PACKET)
-					channelMap.put(srcPort,channel);
 				this.channel = channel;
 				log.info("Connect to server successfully!-> host:port:{}", host + ":" + port);
 			} else {
